@@ -1,14 +1,16 @@
+from PIL import Image
 import torch
 import torchvision
+from torchvision.datasets.dtd import PIL
 import torchvision.transforms as transforms
 import torch.optim as optim
 import torch.nn as nn
 import torch.nn.functional as F
-
+import matplotlib.pyplot as plt
+import numpy as np
 
 if __name__ == '__main__':
-    transform = transforms.Compose([transforms.Grayscale(num_output_channels=3), transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
-
+    
     batch_size = 4
 
     trainset = torchvision.datasets.MNIST(
@@ -19,29 +21,19 @@ if __name__ == '__main__':
     )
 
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=2)
-
-    testset =  torchvision.datasets.ImageNet('data/letters/')
-
-    testloader = torch.utils.data.DataLoader(testset, batch_size=batch_size, shuffle=False, num_workers=2)
-
-    classes = testset.classes
-    print(classes)
     
-    import matplotlib.pyplot as plt
-    import numpy as np
-
     # functions to show an image
 
-    #def imshow(img):
-     #   img = img / 2 + 0.5     # unnormalize
-      #  npimg = img.numpy()
-       # plt.imshow(np.transpose(npimg, (1, 2, 0)))
-       # plt.show()
+    def imshow(img):
+        img = img / 2 + 0.5     # unnormalize
+        npimg = img.numpy()
+        plt.imshow(np.transpose(npimg, (1, 2, 0)))
+        plt.show()
 
 
     # get some random training images
     #dataiter = iter(trainloader)
-   # images, labels = next(dataiter)
+    # images, labels = next(dataiter)
 
     # show images
     #imshow(torchvision.utils.make_grid(images))
@@ -74,7 +66,7 @@ if __name__ == '__main__':
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
 
-    for epoch in range(5):  # loop over the dataset multiple times
+    for epoch in range(2):  # loop over the dataset multiple times
 
         running_loss = 0.0
         for i, data in enumerate(trainloader, 0):
@@ -100,11 +92,21 @@ if __name__ == '__main__':
     
     PATH = './cifar_net.pth'
     torch.save(net.state_dict(), PATH)
+    
+    test_image_path='data/testImage/sample.jpg'
+ 
+    # Reads a file using pillow
+    PIL_image = PIL.Image.open(test_image_path)
 
-    dataiter = iter(testloader)
-    images, labels = next(dataiter)
+    # The image can be converted to tensor using
+    tensor_image = transforms.ToTensor(PIL_image)
 
-    # print images
-    #imshow(torchvision.utils.make_grid(images))
-    #print('GroundTruth: ', ' '.join(f'{classes[labels[j]]:5s}' for j in range(4)))
+    # The tensor can be converted back to PIL using
+    # new_PIL_image = transform.to_pil_image(tensor_image)
+
+    net.eval()
+    net.predict(tensor_image)
+    # TypeError: __init__() takes 1 positional argument but 2 were given
+    net.train()
+
     
