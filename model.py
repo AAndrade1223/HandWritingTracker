@@ -66,7 +66,7 @@ if __name__ == '__main__':
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
 
-    for epoch in range(2):  # loop over the dataset multiple times
+    for epoch in range(1):  # loop over the dataset multiple times
 
         running_loss = 0.0
         for i, data in enumerate(trainloader, 0):
@@ -93,20 +93,27 @@ if __name__ == '__main__':
     PATH = './cifar_net.pth'
     torch.save(net.state_dict(), PATH)
     
-    test_image_path='data/testImage/sample.jpg'
- 
-    # Reads a file using pillow
-    PIL_image = PIL.Image.open(test_image_path)
+    test_image_path='data/testImage/e/e0.png'
+    
+    #attempt 1 
+    #pil_image = Image.open(test_image_path)
+    #errors out above with ValueError: Cannot load file containing pickled data when allow_pickle=False
+    #torch_tensor = TF.ToTensor(pil_image)
 
-    # The image can be converted to tensor using
-    tensor_image = transforms.ToTensor(PIL_image)
-
-    # The tensor can be converted back to PIL using
-    # new_PIL_image = transform.to_pil_image(tensor_image)
+    #attempt 2
+    #torch_tensor = torchvision.io.read_image(test_image_path,mode=torchvision.io.image.ImageReadMode.RGB)
+    #issues with calling net(torch_tensor)
+    # TypeError: __init__() takes 1 positional argument but 2 were given
+    # thought the problem was the  dtype=torch.uint8 at the end but that seems to be a stanard part of the torch_tensor
+    # other than the  dtype=torch.uint8 at the end, the tensor has three channels (RBG). Not sure what is wrong.
+     
+    #attempt 3
+    #numpy_array = np.load(test_image_path)
+    #errors out above with ValueError: Cannot load file containing pickled data when allow_pickle=False
+    #torch_tensor = torch.from_numpy(numpy_array)
 
     net.eval()
-    net.predict(tensor_image)
-    # TypeError: __init__() takes 1 positional argument but 2 were given
+    net(torch_tensor)
     net.train()
 
     
