@@ -8,40 +8,21 @@ import torch.nn as nn
 import torch.nn.functional as F
 import matplotlib.pyplot as plt
 import numpy as np
+import torchvision.transforms.functional as TF
 
 if __name__ == '__main__':
     
-    batch_size = 4
-
+    #PREPROCESS DATA    
+    batch_size = 1
     trainset = torchvision.datasets.MNIST(
         root='./data',
         train=False,
         download=True,
         transform=transforms.Compose([transforms.Grayscale(num_output_channels=3), transforms.ToTensor()])
     )
-
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=2)
     
-    # functions to show an image
-
-    def imshow(img):
-        img = img / 2 + 0.5     # unnormalize
-        npimg = img.numpy()
-        plt.imshow(np.transpose(npimg, (1, 2, 0)))
-        plt.show()
-
-
-    # get some random training images
-    #dataiter = iter(trainloader)
-    # images, labels = next(dataiter)
-
-    # show images
-    #imshow(torchvision.utils.make_grid(images))
-    # print labels
-    #print(' '.join(f'{classes[labels[j]]:5s}' for j in range(batch_size)))
-
-    # Cretaing CNN 
-
+    # DEFINE MODEL
     class Net(nn.Module):
         def __init__(self):
             super().__init__()
@@ -60,12 +41,13 @@ if __name__ == '__main__':
             x = F.relu(self.fc2(x))
             x = self.fc3(x)
             return x
-
+        
+    # CREATE MODEL
     net = Net()
-
+    
+    # TRAIN MODEL
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
-
     for epoch in range(1):  # loop over the dataset multiple times
 
         running_loss = 0.0
@@ -90,30 +72,20 @@ if __name__ == '__main__':
 
     print('Finished Training')
     
+    #SAVE MODEL 
     PATH = './cifar_net.pth'
     torch.save(net.state_dict(), PATH)
     
+    #PREPROCESS QUERY IMAGE
     test_image_path='data/testImage/e/e0.png'
-    
-    #attempt 1 
-    #pil_image = Image.open(test_image_path)
-    #errors out above with ValueError: Cannot load file containing pickled data when allow_pickle=False
-    #torch_tensor = TF.ToTensor(pil_image)
+    pil_image = Image.open(test_image_path)
+    grey_transform=transforms.Compose([transforms.Grayscale(num_output_channels=3), transforms.Resize((28,28)), transforms.ToTensor()])
+    torch_tensor = grey_transform(pil_image)
 
-    #attempt 2
-    #torch_tensor = torchvision.io.read_image(test_image_path,mode=torchvision.io.image.ImageReadMode.RGB)
-    #issues with calling net(torch_tensor)
-    # TypeError: __init__() takes 1 positional argument but 2 were given
-    # thought the problem was the  dtype=torch.uint8 at the end but that seems to be a stanard part of the torch_tensor
-    # other than the  dtype=torch.uint8 at the end, the tensor has three channels (RBG). Not sure what is wrong.
-     
-    #attempt 3
-    #numpy_array = np.load(test_image_path)
-    #errors out above with ValueError: Cannot load file containing pickled data when allow_pickle=False
-    #torch_tensor = torch.from_numpy(numpy_array)
-
+    #PREDICT WITH MODEL
     net.eval()
     net(torch_tensor)
+    #RuntimeError: mat1 and mat2 shapes cannot be multiplied (16x16 and 256x120)
+    # on line 40: x = F.relu(self.fc1(x))
     net.train()
-
     
