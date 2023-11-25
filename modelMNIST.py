@@ -5,10 +5,17 @@ import torch.optim as optim
 import torch.nn as nn
 import torch.nn.functional as F
 from PIL import Image as Im
+import processTestImages
+import os
+#from processTestImages import processImageDirectory
 
 
 if __name__ == '__main__':
-    transform = transforms.Compose([transforms.Grayscale(num_output_channels=3), transforms.Resize((28,28)), transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+    #Preprocess images
+    pti = processTestImages.processTestImages()
+    outDirectory=pti.processImageDirectory()    
+
+    transform = transforms.Compose([transforms.Grayscale(num_output_channels=3), transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
 
     batch_size = 32
 
@@ -21,7 +28,7 @@ if __name__ == '__main__':
 
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=2)
 
-    testset = torchvision.datasets.ImageFolder('./data/testImage', transform=transform)
+    testset = torchvision.datasets.ImageFolder(outDirectory, transform=transform)
     
     testloader = torch.utils.data.DataLoader(testset, batch_size=batch_size, shuffle=False, num_workers=2) 
 
@@ -49,7 +56,7 @@ if __name__ == '__main__':
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
 
-    for epoch in range(10):  # loop over the dataset multiple times
+    for epoch in range(2):  # loop over the dataset multiple times
 
         running_loss = 0.0
         for i, data in enumerate(trainloader, 0):
