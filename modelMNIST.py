@@ -1,14 +1,12 @@
+import matplotlib.pyplot as plt 
+import os
+import processTestImages
 import torch
-import torchvision
-import torchvision.transforms as transforms
-import torch.optim as optim
 import torch.nn as nn
 import torch.nn.functional as F
-from PIL import Image as Im
-import processTestImages
-import os
-#from processTestImages import processImageDirectory
-
+import torch.optim as optim
+import torchvision
+import torchvision.transforms as transforms
 
 if __name__ == '__main__':
     #Preprocess images
@@ -56,7 +54,7 @@ if __name__ == '__main__':
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
 
-    for epoch in range(2):  # loop over the dataset multiple times
+    for epoch in range(10):  # loop over the dataset multiple times
 
         running_loss = 0.0
         for i, data in enumerate(trainloader, 0):
@@ -80,20 +78,44 @@ if __name__ == '__main__':
 
     print('Finished Training')
     
-    def predictions(test, model):
+    def plotImages(images,results,batch,saveDir):
+        fig = plt.figure(figsize=(20,36)) 
+        font = {'family' : 'normal',
+        'weight' : 'bold',
+        'size'   : 22}
+        plt.rcParams.update({'font.size': 22})
+        for i,image in enumerate(images):
+            fig.add_subplot(16, 2, i+1)
+            result=results[i]
+            label="prediction: {r1} confidence: {r2}.".format(r1=result[0], r2=round(result[1].item(),3))           
+            plt.imshow(image.numpy()[0])
+            plt.axis('off') 
+            plt.title(label)
+            plt.subplots_adjust(wspace=2,hspace=2)
+            plt.tight_layout()
+        saveFile=os.path.join(saveDir,"save{b1}.png".format(b1=batch))
+        fig.savefig(saveFile)
+            
+    
+    def makePredictions(test, model):
         with torch.no_grad():
+            # create figure 
+            saveDir=os.path.join(outDirectory,"results")
+            os.mkdir(saveDir)
             predictions = []
+            i=0
             for data in test:
+                i=i+1
                 images, _ = data
                 outputs = model(images)
-                print(outputs)
                 outputs=F.softmax(outputs,dim=1)
-                print(outputs)
                 confidence, predicted = torch.max(outputs.data,1)   
                 results=torch.stack((predicted,confidence),dim=1)
                 predictions.append(results)
+                plotImages(images,results,i,saveDir)
+            #plt.waitforbuttonpress()
             return predictions
-      
-    predictions = predictions(testloader, net)
-    print(predictions)
+        
+    predictions = makePredictions(testloader, net)
+   # print(predictions)
     

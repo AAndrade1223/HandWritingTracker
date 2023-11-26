@@ -1,8 +1,7 @@
-# Import required packages
-import string
 import cv2
-import time, datetime, os
+import datetime
 import glob
+import os
 
 class processTestImages:
 
@@ -33,7 +32,7 @@ class processTestImages:
 		img_invert = cv2.bitwise_not(image)
 		# Finding contours
 		contours, hierarchy = cv2.findContours(dilation, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
+		
 		# Creating a copy of image
 		im2 = img_invert.copy()
 	
@@ -49,6 +48,9 @@ class processTestImages:
 	
 			# Cropping the text block for giving input to OCR
 			cropped = im2[y:y + h, x:x + w]
+			
+			#resize image
+			cropped=cv2.resize(cropped, (28, 28))
 			self.saveImage(cropped,it)
 
 	def processImageDirectory(self):
