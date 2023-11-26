@@ -79,13 +79,13 @@ if __name__ == '__main__':
     print('Finished Training')
     
     def plotImages(images,results,batch,saveDir):
-        fig = plt.figure(figsize=(20,36)) 
+        fig = plt.figure(figsize=(36,36)) 
         font = {'family' : 'normal',
         'weight' : 'bold',
         'size'   : 22}
         plt.rcParams.update({'font.size': 22})
         for i,image in enumerate(images):
-            fig.add_subplot(16, 2, i+1)
+            fig.add_subplot(8, 4, i+1)
             result=results[i]
             label="prediction: {r1} confidence: {r2}.".format(r1=result[0], r2=round(result[1].item(),3))           
             plt.imshow(image.numpy()[0])
