@@ -1,6 +1,8 @@
+import argparse
 import matplotlib.pyplot as plt 
 import os
 import processTestImages
+import sys
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -9,27 +11,44 @@ import torchvision
 import torchvision.transforms as transforms
 
 if __name__ == '__main__':
-    #Preprocess images
+    parser = argparse.ArgumentParser(description = "Arguement Parser")
+    parser.add_argument("-t", "--testpath", help = "path to directory of test images", required = False, default = "")
+    parser.add_argument("-o", "--outpath", help = "path to directory where results are stored", required = False, default = "")    
+
+    args = parser.parse_args()
+
+    #Get, Validate Args
+    inDirectroyArg = args.testpath
+    outDirectoryArg = args.outpath
+    if os.path.isdir(inDirectroyArg):
+        print("Test Image Directory: " + inDirectroyArg)
+    else:
+        inDirectroyArg=""
+    if os.path.isdir(outDirectoryArg):
+        print("Final Results Directory: " + outDirectoryArg)
+    else:
+        outDirectoryArg=""   
+        
+    #Preprocess  Test Images
     pti = processTestImages.processTestImages()
-    outDirectory=pti.processImageDirectory()    
+    outDirectory=pti.processImageDirectory(inDirectroyArg,outDirectoryArg)    
 
+    #Prepare Dataset
     transform = transforms.Compose([transforms.Grayscale(num_output_channels=3), transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
-
     batch_size = 32
-
     trainset = torchvision.datasets.MNIST(
         root='./data',
         train=False,
         download=True,
         transform=transforms.Compose([transforms.Grayscale(num_output_channels=3), transforms.ToTensor()])
     )
-
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=2)
 
-    testset = torchvision.datasets.ImageFolder(outDirectory, transform=transform)
-    
+    #Prepare Testset
+    testset = torchvision.datasets.ImageFolder(outDirectory, transform=transform)   
     testloader = torch.utils.data.DataLoader(testset, batch_size=batch_size, shuffle=False, num_workers=2) 
 
+    #Define Model
     class Net(nn.Module):
         def __init__(self):
             super().__init__()
@@ -49,8 +68,10 @@ if __name__ == '__main__':
             x = self.fc3(x)
             return x
 
+    #Create Model
     net = Net()
 
+    #Train Model
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
 
@@ -75,9 +96,9 @@ if __name__ == '__main__':
             if i % 200 == 199:    # print every 2000 mini-batches
                 print(f'[{epoch + 1}, {i + 1:5d}] loss: {running_loss / 200:.3f}')
                 running_loss = 0.0
-
     print('Finished Training')
     
+    #Create Results Plot by Batch
     def plotImages(images,results,batch,saveDir):
         fig = plt.figure(figsize=(36,36)) 
         font = {'family' : 'normal',
@@ -97,6 +118,7 @@ if __name__ == '__main__':
         fig.savefig(saveFile)
             
     
+    #Make Predictons of Test Images using Model
     def makePredictions(test, model):
         with torch.no_grad():
             # create figure 
@@ -116,6 +138,7 @@ if __name__ == '__main__':
             #plt.waitforbuttonpress()
             return predictions
         
+    #run
     predictions = makePredictions(testloader, net)
    # print(predictions)
     
