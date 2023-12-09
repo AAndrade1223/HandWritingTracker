@@ -11,7 +11,6 @@ class processTestImages:
 
 	def saveImage(self,img,iter):
 		path=os.getcwd()
-		print(path)
 		todaynowstr = self.getTodayNow()
 		filename = 'testContour_' + todaynowstr + "_" + str(iter) + '.png'
 		cv2.imwrite(filename, img)  
@@ -30,7 +29,7 @@ class processTestImages:
 
 		# Applying dilation on the threshold image
 		dilation = cv2.dilate(thresh, rect_kernel, iterations = 5)
-
+		
 		#Invert image
 		img_invert = cv2.bitwise_not(image)
 		
@@ -54,55 +53,95 @@ class processTestImages:
 			#resize image
 			cropped=cv2.resize(cropped, (28, 28))
 			self.saveImage(cropped,iter)
+		print("Contour images saved: " + str(iter))
 
-	def processImageDirectory(self,testPath="",resultPath=""):
-		startingDirectory,testPath,originalTestImagesCpyPath,processedTestImagesClassPath,processedTestImagesPath,resultPath = self.formatDirectories(testPath,resultPath)		
-		shutil.copytree(testPath, originalTestImagesCpyPath,dirs_exist_ok=True)
-		os.chdir(originalTestImagesCpyPath)	
+
+	def processTestImageDirectory(self,testPath="",resultPath=""):		
+		# Argument: testPath   = user-entered, validated path to directory of test images
+		# Argument: resultPath = user-entered, validated path to directory to save result images
+
+		# defined in formatDirectories()
+		homePath,testPath,ogTestPath,pccdTestImgPath,pccdTestImgClssPath,resultPath = self.formatDirectories(testPath,resultPath)		
+		
+		shutil.copytree(testPath,ogTestPath,dirs_exist_ok=True)	
+		os.chdir(ogTestPath)
+		
+		# Sort out images of unacceptable filetypes
 		images = []
 		imgFound=0
-		for image in os.listdir(originalTestImagesCpyPath):
+		for image in os.listdir(ogTestPath):
 			if image.endswith(".png") or image.endswith(".jpg"):
-				print("image found: " + image)
+				print("Test image found: " + image)
 				img = cv2.imread(image)
 				images.append(img)
 				imgFound+=1
 			else:
-				print("image format invalid: ")
-		os.chdir(processedTestImagesClassPath) 
-		print("Images found: " + str(imgFound))
+				print("Test image format invalid. jpg and png only.")
+		
+		# Process valid images
+		os.chdir(pccdTestImgClssPath) 
+		print("Test images found: " + str(imgFound))
 		imgProcessed = 0
 		for image in images:
 			self.processImage(image)
 			imgProcessed+=1
 		print("Test images processed: " + str(imgProcessed))
-		os.chdir(startingDirectory)
-		return [processedTestImagesPath,resultPath]
+		os.chdir(homePath)
+		return [pccdTestImgPath,resultPath]
 	
 	def formatDirectories(self,testPath="",resultPathParent=""):
-		#Starting (original) directory
-		startingDirectory= os.path.dirname(os.path.abspath(__file__))
-		#test image "in" directory
+		# homePath             = absolute path of this file
+		# ogTestPath           = absolute path of where orginal test images are copied to in results folder
+		# pccdTestImgPath      = absolute path of processed test images
+		# pccdTestImgClssPath  = absolute path of class file for processed test images 
+		# resultPath           = absolute path of directory where the result plots and csv will be stored
+		
+		# |-homepath (..\HandWritingTracker)
+        # |----runs
+        # |-------datetime
+        # |-----------originalTestImages
+        # |-----------processedTestImages
+        # |---------------images
+        # |-----------results
+        # |----src
+        # |------data
+        # |-----------sampleNumbersOneImage		
+
+		homePath= os.path.dirname(os.path.abspath(__file__))
+		
+		# testPath   = user-entered, validated path to directory of test images
 		if not testPath:
 			testPath = ".\\src\\data\\testData\\sampleNumbersOneImage"
-			testPath = os.path.abspath(testPath)
-		#results "out" directory
-		todaynowstr = self.getTodayNow()
-		if not resultPathParent:
-			resultPathParent = ".\\.\\runs\\"
-		resultPathParent = os.path.join(resultPathParent, todaynowstr)
-		originalTestImagesCpyPath = os.path.join(resultPathParent, "originalTestImages\\")
-		processedTestImagesPath = os.path.join(resultPathParent, "processedTestImages\\")
-		processedTestImagesClassPath = os.path.join(processedTestImagesPath, "images\\")
-		resultPath = os.path.join(resultPathParent,"results\\")
-		#recursively makes directories
-		os.makedirs(originalTestImagesCpyPath)
-		os.makedirs(processedTestImagesClassPath)
-		os.makedirs(resultPath)
 		testPath = os.path.abspath(testPath)
-		originalTestImagesCpyPath = os.path.abspath(originalTestImagesCpyPath)
-		processedTestImagesClassPath = os.path.abspath(processedTestImagesClassPath)
-		processedTestImagesPath = os.path.abspath(processedTestImagesPath)
+		
+		# directory to uniquly identify this run
+		todaynowstr = self.getTodayNow()
+
+		# resultPathParent = parent folder for this run
+		if not resultPathParent:
+			resultPathParent = ".\\.\\runs\\"		
+		resultPathParent = os.path.join(resultPathParent, todaynowstr)
+		
+		# subfolders for this run: 
+		# original test images are copied to this folder
+		ogTestPath = os.path.join(resultPathParent, "originalTestImages\\")
+		# processed test images are stored in class folder in this folder
+		pccdTestImgPath = os.path.join(resultPathParent, "processedTestImages\\")
+		pccdTestImgClssPath = os.path.join(pccdTestImgPath, "images\\")
+		# result data is stored in this folder
+		resultPath = os.path.join(resultPathParent,"results\\")
+		
+		# recursively makes directories
+		os.makedirs(ogTestPath)
+		os.makedirs(pccdTestImgClssPath)
+		os.makedirs(resultPath)
+		
+		# return absolute paths
+		testPath = os.path.abspath(testPath)
+		ogTestPath = os.path.abspath(ogTestPath)
+		pccdTestImgPath = os.path.abspath(pccdTestImgPath)
+		pccdTestImgClssPath = os.path.abspath(pccdTestImgClssPath)
 		resultPath = os.path.abspath(resultPath)
-		return startingDirectory,testPath,originalTestImagesCpyPath,processedTestImagesClassPath,processedTestImagesPath,resultPath
+		
+		return homePath,testPath,ogTestPath,pccdTestImgPath,pccdTestImgClssPath,resultPath
 		
