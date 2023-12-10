@@ -28,7 +28,10 @@ def validatePathArgs(argPath, argDescStr):
 
 def setMakePaths(trainPath, validPath, testPath, resultPathParent):
     # cwdPath              = absolute path of this file
-    # copyTestPath         = absolute path of where orginal test images are copied to in results folder
+    # trainpath            = absolute path of training dataset 
+    # validpath            = absolute path of validation dataset 
+    # copyFromTestPath     = absolute path of where orginal test images are copied FROM
+    # copyToTestPath       = absolute path of where orginal test images are copied TO in results folder
     # pccdTestImgPath      = absolute path of processed test images
     # pccdTestImgClssPath  = absolute path of class file for processed test images
     # resultPath           = absolute path of directory where the result plots and csv will be stored
@@ -41,7 +44,10 @@ def setMakePaths(trainPath, validPath, testPath, resultPathParent):
     # |-----------results
     # |----src
     # |------data
-    # |-----------sampleNumbersOneImage
+    # |-----------various datasets
+    # |-----------testData
+    # |-------------- example test data
+    # |-------------- testImages - default location to store test images
 
     # Current Working Directory
     cwdPath = os.path.dirname(os.path.abspath(__file__))
@@ -81,7 +87,6 @@ def setMakePaths(trainPath, validPath, testPath, resultPathParent):
         copyFromTestPath,
         copyToTestPath,
         pccdTestImgPath,
-        pccdTestImgPath,
         pccdTestImgClssPath,
         resultPath,
     ]
@@ -118,7 +123,7 @@ def analyzeLogits(logits: torch.Tensor, varThreshold):
     return output
 
 
-# write results to CSV
+# Write results to CSV
 def writeToCSV(resultPath, results):
     resultsCSV = os.path.join(resultPath, "results.csv")
     with open(resultsCSV, "w+") as fd:
@@ -130,7 +135,7 @@ def writeToCSV(resultPath, results):
     print("Batch Result Data Saved to CSV.")
 
 
-# Create Results Plot by Batch
+# Create results plot by batch
 def plotImages(images, results, batch, filepath):
     fig = plt.figure(figsize=(36, 36))
     font = {"family": "normal", "weight": "bold", "size": 22}
@@ -157,8 +162,5 @@ def plotImages(images, results, batch, filepath):
 def getTodayNowStr():
     return (
         datetime.utcnow()
-        .strftime("%Y-%m-%d %H:%M:%S.%f")
-        .replace(":", "_")
-        .replace("-", "_")
-        .replace(".", "_")
+        .strftime("%Y_%m_%d_%H_%M_%S_%f")
     )

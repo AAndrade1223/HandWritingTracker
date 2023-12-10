@@ -1,6 +1,4 @@
 import argparse
-
-from numpy import var
 import helper_functions as hf
 import model as m
 import model_functions as mf
@@ -59,23 +57,23 @@ if __name__ == "__main__":
         "-c",
         "--buildCSV",
         help="flag to build csv file of results",
-        required=False,
-        action="store_false",
-    )  # default true
+        required=False, 
+        action="store_false", # default true
+    )  
     parser.add_argument(
         "-p",
         "--plotResults",
         help="flag to plot images with results",
-        required=False,
-        action="store_false",
-    )  # default true
+        required=False, 
+        action="store_false", # default true
+    )  
     parser.add_argument(
         "-o",
         "--overrideExit",
         help="flag to override any early exits",
-        required=False,
-        action="store_true",
-    )  # default false
+        required=False, 
+        action="store_true", # default false
+    )  
     args = parser.parse_args()
 
     # Get / Validate Args
@@ -108,7 +106,6 @@ if __name__ == "__main__":
         validPath,
         copyFromTestPath,
         copyToTestPath,
-        pccdTestImgPath,
         pccdTestImgPath,
         pccdTestImgClssPath,
         resultPath,
@@ -179,7 +176,7 @@ if __name__ == "__main__":
     # Validate Model
     mf.validateModel(mod, validationloader, classes)
 
-    # Made Predictions
+    # Make Predictions
     mf.predictWithModel(
         testloader, mod, resultPath, buildCSV, plotResults, confThreshold, varThreshold
     )

@@ -68,8 +68,6 @@ def processImage(image):
 def processTestImageDirectory(
     cwdPath, copyFromTestPath, copyToTestPath, pccdTestImgClssPath, overrideExit
 ):
-    # Argument: testPath   = user-entered, validated path to directory of test images
-    # Argument: resultPath = user-entered, validated path to directory to save result images
 
     # If there are no test images, exit early
     if not os.listdir(copyFromTestPath):
@@ -104,67 +102,3 @@ def processTestImageDirectory(
     print("Test images processed: " + str(imgProcessed))
     print("Contours Found: " + str(contorsFound))
     os.chdir(cwdPath)
-
-
-def formatDirectories(testPath="", resultPathParent=""):
-    # homePath             = absolute path of this file
-    # ogTestPath           = absolute path of where orginal test images are copied to in results folder
-    # pccdTestImgPath      = absolute path of processed test images
-    # pccdTestImgClssPath  = absolute path of class file for processed test images
-    # resultPath           = absolute path of directory where the result plots and csv will be stored
-
-    # |-homepath (..\HandWritingTracker)
-    # |----runs
-    # |-------datetime
-    # |-----------originalTestImages
-    # |-----------processedTestImages
-    # |---------------images
-    # |-----------results
-    # |----src
-    # |------data
-    # |-----------sampleNumbersOneImage
-
-    homePath = os.path.dirname(os.path.abspath(__file__))
-
-    # testPath   = user-entered, validated path to directory of test images
-    if not testPath:
-        testPath = ".\\data\\testData\\sampleNumbersOneImage"
-    testPath = os.path.abspath(testPath)
-
-    # directory to uniquly identify this run
-    todaynowstr = ""
-
-    # resultPathParent = parent folder for this run
-    if not resultPathParent:
-        resultPathParent = ".\\.\\runs\\"
-    resultPathParent = os.path.join(resultPathParent, todaynowstr)
-
-    # subfolders for this run:
-    # original test images are copied to this folder
-    ogTestPath = os.path.join(resultPathParent, "originalTestImages\\")
-    # processed test images are stored in class folder in this folder
-    pccdTestImgPath = os.path.join(resultPathParent, "processedTestImages\\")
-    pccdTestImgClssPath = os.path.join(pccdTestImgPath, "images\\")
-    # result data is stored in this folder
-    resultPath = os.path.join(resultPathParent, "results\\")
-
-    # recursively makes directories
-    os.makedirs(ogTestPath)
-    os.makedirs(pccdTestImgClssPath)
-    os.makedirs(resultPath)
-
-    # return absolute paths
-    testPath = os.path.abspath(testPath)
-    ogTestPath = os.path.abspath(ogTestPath)
-    pccdTestImgPath = os.path.abspath(pccdTestImgPath)
-    pccdTestImgClssPath = os.path.abspath(pccdTestImgClssPath)
-    resultPath = os.path.abspath(resultPath)
-
-    return (
-        homePath,
-        testPath,
-        ogTestPath,
-        pccdTestImgPath,
-        pccdTestImgClssPath,
-        resultPath,
-    )
