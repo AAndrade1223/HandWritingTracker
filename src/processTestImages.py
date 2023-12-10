@@ -1,20 +1,22 @@
-import csv
-import shutil
 import cv2
 from datetime import datetime
 import os
+import shutil
 
 class processTestImages:
 	
 	def getTodayNow(self):
 		return datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f').replace(':','_').replace('-','_').replace('.','_')
 
-	def saveImage(self,img,iter):
-		path=os.getcwd()
+	def saveImage(self,img):
 		todaynowstr = self.getTodayNow()
-		filename = 'testContour_' + todaynowstr + "_" + str(iter) + '.png'
+		filename = 'testContour_' + todaynowstr
+		i = 0
+		while os.path.exists(f"{filename}{i}.png"):
+			i += 1
+		filename=f"{filename}{i}.png"
 		cv2.imwrite(filename, img)  
-		print("image saved: " + filename)
+		#print("image saved: " + filename)
 	
 	def processImage(self,image):
 		# Convert the image to gray scale
@@ -41,6 +43,7 @@ class processTestImages:
 	
 		# Looping through the identified contours
 		# Then rectangular part is cropped and passed on
+		count=0
 		for iter,cnt in enumerate(contours):
 			x, y, w, h = cv2.boundingRect(cnt)
 	
@@ -52,8 +55,13 @@ class processTestImages:
 			
 			#resize image
 			cropped=cv2.resize(cropped, (28, 28))
-			self.saveImage(cropped,iter)
-		print("Contour images saved: " + str(iter))
+			self.saveImage(cropped)
+			count=iter+1
+		#if count==0:
+		#	print("No contors were found in image.")
+		#else:
+		#	print("Contour images saved: " + str(count))
+		return count
 
 
 	def processTestImageDirectory(self,testPath="",resultPath=""):		
@@ -82,10 +90,12 @@ class processTestImages:
 		os.chdir(pccdTestImgClssPath) 
 		print("Test images found: " + str(imgFound))
 		imgProcessed = 0
+		contorsFound = 0
 		for image in images:
-			self.processImage(image)
+			contorsFound+=self.processImage(image)
 			imgProcessed+=1
 		print("Test images processed: " + str(imgProcessed))
+		print("Contours Found: " + str(contorsFound))
 		os.chdir(homePath)
 		return [pccdTestImgPath,resultPath]
 	

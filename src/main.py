@@ -1,13 +1,8 @@
 import argparse
 import csv
-from decimal import Decimal
-from pickle import TRUE
-from statistics import variance
 import matplotlib.pyplot as plt 
-import numpy as np
 import os
 import processTestImages
-import sys
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -24,30 +19,40 @@ if __name__ == '__main__':
     parser.add_argument("-p", "--plotResults", help = "flag to plot images with results", required = False, action="store_false")  #default true
     args = parser.parse_args()
 
-    #Get, Validate Args
+    #Get Args
     trainPath = args.trainpath
     testPath = args.testpath
     resultPath = args.resultpath
     buildCSV = args.buildCSV
-    plotResuts = args.plotResults
+    plotResults = args.plotResults
+    
+    #Validate Args
     if os.path.isdir(trainPath):
         print("Train Image Path: " + trainPath)
     else:
         trainPath=""
+        print("Using Default Training Dataset.")
+        
     if os.path.isdir(testPath):
         print("Test Image Path: " + testPath)
     else:
         testPath=""
+        print("Using Default Testing Dataset.")
+        
     if os.path.isdir(resultPath):
         print("Final Results Path: " + resultPath)
     else:
         resultPath=""
+        print("Using Default Results Directroy. See \".\\HandWritingTracker\\runs\"")
+        
+    if not (buildCSV or plotResults):
+        print("Warning: Results will not be reported or saved. Run again with either -c buildCSV or -p plotResults left as defaulted true.")
         
     #Preprocess Test Images
     pti = processTestImages.processTestImages()
     processedTestImagesPath,resultPath=pti.processTestImageDirectory(testPath,resultPath)    
 
-    #Prepare Dataset
+    #Prepare Training Dataset
     transform = transforms.Compose([transforms.Grayscale(num_output_channels=3), transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
     batch_size = 32
     if trainPath:
@@ -60,9 +65,9 @@ if __name__ == '__main__':
             transform=transforms.Compose([transforms.Grayscale(num_output_channels=3), transforms.ToTensor()])
         )   
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=2)
-            
+    classes = trainset.classes
+    
     #Prepare Validation DataSet
-    batch_size = 32
     validateset = torchvision.datasets.MNIST(
         root='./data',
         train=False,
@@ -70,7 +75,6 @@ if __name__ == '__main__':
         transform=transforms.Compose([transforms.Grayscale(num_output_channels=3), transforms.ToTensor()])
     )
     validationloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=2)
-    classes = validateset.classes
 
     #Prepare Testset
     testset = torchvision.datasets.ImageFolder(processedTestImagesPath, transform=transform)   
@@ -103,6 +107,7 @@ if __name__ == '__main__':
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
 
+    print("Training Model...")
     for epoch in range(10):  # loop over the dataset multiple times
 
         running_loss = 0.0
@@ -121,25 +126,22 @@ if __name__ == '__main__':
 
             # print statistics
             running_loss += loss.item()
-            if i % 200 == 199:    # print every 2000 mini-batches
-                print(f'[{epoch + 1}, {i + 1:5d}] loss: {running_loss / 200:.3f}')
+            if i % 200 == 199:    # print every 200 mini-batches
+                print(f'Batch: {epoch + 1}, Size: {i + 1}, Loss: {running_loss / 200:.3f}')
                 running_loss = 0.0
     print('Finished Training.')
     
 
     def validateModel():
-        print("Validatig Model...")
-        # prepare to count predictions for each class
+        print("Validating Model...")
         correct_pred = {classname: 0 for classname in classes}
         total_pred = {classname: 0 for classname in classes}
 
-        # again no gradients needed
         with torch.no_grad():
             for data in validationloader:
                 images, labels = data
                 outputs = net(images)
                 _, predictions = torch.max(outputs, 1)
-                # collect the correct predictions for each class
                 for label, prediction in zip(labels, predictions):
                     if label == prediction:
                         correct_pred[classes[label]] += 1
@@ -151,9 +153,20 @@ if __name__ == '__main__':
             print(f'Accuracy for class: {classname:5s} is {accuracy:.1f} %')
         
     validateModel()    
+    
+    def writeToCSV(resultpath,results):
+        resultsCSV=os.path.join(resultPath,"results.csv") 
+        with open(resultsCSV,'w+') as fd:
+            for res in results:
+                results_str = "{r0},{r1},{r2},{r3}\n".format(r0=res[0].item(),
+                                                                r1=res[1].item(),
+                                                                r2=res[2].item(),
+                                                                r3=res[3].item())                  
+                fd.write(results_str)
+        print("Batch Result Data Saved to CSV.")
 
     #Create Results Plot by Batch
-    def plotImages(images,results,batch,saveDir):
+    def plotImages(images,results,batch,filepath):
         fig = plt.figure(figsize=(36,36)) 
         font = {'family' : 'normal',
         'weight' : 'bold',
@@ -173,36 +186,33 @@ if __name__ == '__main__':
             plt.title(label)
             plt.subplots_adjust(wspace=2,hspace=2)
             plt.tight_layout()
-        saveFile=os.path.join(saveDir,"save{b1}.png".format(b1=batch))
-        fig.savefig(saveFile)
+        filepath=os.path.join(filepath,"batch_{b1}.png".format(b1=batch))
+        fig.savefig(filepath)
+        print("Plot of Batch Images Saved.")
     
     #Make Predictions of Test Images using Model
     def makePredictions(test, model):
-        print("Making classifications on test data")
-        with torch.no_grad():
-            # create figure 
-            #saveDir=os.path.join(resultPath,"results")   
-            resultsCSV=os.path.join(resultPath,"results.csv")      
-            #os.mkdir(saveDir)
+        print("Making Classifications on Test Data...")
+        with torch.no_grad(): 
             predictions = []
-            with open(resultsCSV,'w+') as fd:
-                i=0
-                for data in test:
-                    i=i+1
-                    images, _ = data
-                    logits = model(images)
-                    results = analyzeLogits(logits)
-                    predictions.append(results)
-                    for res in results:
-                        results_str = "{r0},{r1},{r2},{r3}\n".format(r0=res[0].item(),
-                                                                     r1=res[1].item(),
-                                                                     r2=res[2].item(),
-                                                                     r3=res[3].item())                  
-                        fd.write(results_str)
+            i=0
+            for data in test:
+                print("Testing Batch: {b0} of {b1}".format(b0=i+1,b1=len(test)))
+                i=i+1
+                images, _ = data
+                logits = model(images)
+                results = analyzeLogits(logits)
+                predictions.append(results)
+                if buildCSV:
+                    writeToCSV(resultPath,results)
+                if plotResults:
                     plotImages(images,results,i,resultPath)
                 #plt.show() 
+        print("Testing Complete.")
+        print("See {p0} for result data.".format(p0=resultPath))
         return predictions
     
+    # Analyze logits using softmax and varmax
     def analyzeLogits(logits:torch.Tensor):
         variance = torch.var(torch.abs(logits), dim = 1) 
         varmax_mask = variance < 0.75
@@ -210,7 +220,7 @@ if __name__ == '__main__':
         unknown = torch.zeros(shape[0], device=logits.device)
         unknown[varmax_mask] = 2
         confidence, classif = torch.max(torch.softmax(logits, dim=-1),1)
-        output = torch.stack([classif,confidence, variance, unknown], dim = -1)
+        output = torch.stack([classif, confidence, variance, unknown], dim = -1)
         return output
         
     #run
