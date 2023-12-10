@@ -2,14 +2,14 @@ import helper_functions as hf
 import torch
 import torch.nn as nn
 import torch.optim as optim
-    
-def trainModel(mod,trainloader):
+
+
+def trainModel(mod, trainloader):
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(mod.parameters(), lr=0.001, momentum=0.9)
 
     print("Training Model...")
     for epoch in range(10):  # loop over the dataset multiple times
-
         running_loss = 0.0
         for i, data in enumerate(trainloader, 0):
             # get the inputs; data is a list of [inputs, labels]
@@ -26,13 +26,15 @@ def trainModel(mod,trainloader):
 
             # print statistics
             running_loss += loss.item()
-            if i % 200 == 199:    # print every 200 mini-batches
-                print(f'Batch: {epoch + 1}, Size: {i + 1}, Loss: {running_loss / 200:.3f}')
+            if i % 200 == 199:  # print every 200 mini-batches
+                print(
+                    f"Batch: {epoch + 1}, Size: {i + 1}, Loss: {running_loss / 200:.3f}"
+                )
                 running_loss = 0.0
-    print('Finished Training.')
-    
+    print("Finished Training.")
 
-def validateModel(mod,validationloader,classes):
+
+def validateModel(mod, validationloader, classes):
     print("Validating Model...")
     correct_pred = {classname: 0 for classname in classes}
     total_pred = {classname: 0 for classname in classes}
@@ -50,37 +52,46 @@ def validateModel(mod,validationloader,classes):
     # print accuracy for each class
     for classname, correct_count in correct_pred.items():
         accuracy = 100 * float(correct_count) / total_pred[classname]
-        print(f'Accuracy for class: {classname:5s} is {accuracy:.1f} %')
+        print(f"Accuracy for class: {classname:5s} is {accuracy:.1f} %")
 
 
-#Make Predictions of Test Images using Model
-def predictWithModel(testloader, model, resultPath, buildCSV, plotResults, confThreshold, varThreshold):
+# Make Predictions of Test Images using Model
+def predictWithModel(
+    testloader, model, resultPath, buildCSV, plotResults, confThreshold, varThreshold
+):
     print("Making Classifications on Test Data...")
-    with torch.no_grad(): 
+    with torch.no_grad():
         lowVarCount = 0
         goodPredCount = 0
         predictions = []
-        i=0
+        i = 0
         for data in testloader:
-            print("Testing Batch: {b0} of {b1}".format(b0=i+1,b1=len(testloader)))
-            i=i+1
+            print("Testing Batch: {b0} of {b1}".format(b0=i + 1, b1=len(testloader)))
+            i = i + 1
             images, _ = data
             logits = model(images)
-            results = hf.analyzeLogits(logits,varThreshold)
+            results = hf.analyzeLogits(logits, varThreshold)
             predictions.append(results)
             for res in results:
                 if res[3] == 2:
                     lowVarCount = lowVarCount + 1
                 elif res[1] >= confThreshold:
-                    goodPredCount = goodPredCount+1
+                    goodPredCount = goodPredCount + 1
             if buildCSV:
-                hf.writeToCSV(resultPath,results)
+                hf.writeToCSV(resultPath, results)
             if plotResults:
-                hf.plotImages(images,results,i,resultPath)
-                #plt.show() 
+                hf.plotImages(images, results, i, resultPath)
+                # plt.show()
     print("Testing Complete.")
-    print("Invalid samples with confidence varainces lower than {s0}: {s1}".format(s0=varThreshold,s1=lowVarCount))
-    print("High confidence (>{s0}) Samples: {s1}".format(s0=confThreshold,s1=goodPredCount))
+    print(
+        "Invalid samples with confidence varainces lower than {s0}: {s1}".format(
+            s0=varThreshold, s1=lowVarCount
+        )
+    )
+    print(
+        "High confidence (>{s0}) Samples: {s1}".format(
+            s0=confThreshold, s1=goodPredCount
+        )
+    )
     print("See {p0} for explicit result data.".format(p0=resultPath))
     return predictions
-    
