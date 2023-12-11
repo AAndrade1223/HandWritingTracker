@@ -1,3 +1,9 @@
+To begin, copy the repository using the following git commad: 
+
+git clone https://github.com/aandrade1223/HandWritingTracker.git
+
+Before running this project, ensure you are either passing in a path to a directory where test images are stored as jpegs or pngs or copy and paste test images in form of jpegs and pngs to src/data/testData/testImages. 
+
 To run this project, change directory into HandwritingTracker/src. Run with command "python main.py"
 
 There are 9 optional arguments to this program:
