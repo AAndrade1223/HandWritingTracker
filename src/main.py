@@ -21,14 +21,14 @@ if __name__ == "__main__":
     parser.add_argument(
         "-vt",
         "--variancethreshold",
-        help="accaptable confidence variance threshold. Default 0.75",
+        help="acceptable confidence variance threshold. Default 0.75",
         required=False,
         default=0.75,
     )
     parser.add_argument(
         "-tr",
         "--trainpath",
-        help="path to directory of trainging dataset of images",
+        help="path to directory of training dataset of images",
         required=False,
         default="",
     )
