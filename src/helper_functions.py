@@ -126,7 +126,7 @@ def analyzeLogits(logits: torch.Tensor, varThreshold):
 # Write results to CSV
 def writeToCSV(resultPath, results):
     resultsCSV = os.path.join(resultPath, "results.csv")
-    with open(resultsCSV, "w+") as fd:
+    with open(resultsCSV, "a") as fd:
         for res in results:
             results_str = "{r0},{r1},{r2},{r3}\n".format(
                 r0=res[0].item(), r1=res[1].item(), r2=res[2].item(), r3=res[3].item()
