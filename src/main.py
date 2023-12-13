@@ -77,8 +77,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Get / Validate Args
-    confThreshold = args.confidencethreshold
-    varThreshold = args.variancethreshold
+    confThreshold = float(args.confidencethreshold)
+    varThreshold = float(args.variancethreshold)
     trainPath = hf.validatePathArgs(args.trainpath, "Training Dataset")
     validPath = hf.validatePathArgs(args.validpath, "Validation Dataset")
     testPath = hf.validatePathArgs(args.testpath, "Testing Images")
